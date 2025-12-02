@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAMP Agent v3.0 - NWU Compliance Scorer</title>
+    <style>
+        :root {
+            --color-primary: #1a0f2e;
+            --color-secondary: #2d1b4e;
+            --color-tertiary: #3d2463;
+            --color-accent: #c7157a;
+            --color-accent-light: #e91e8c;
+            --color-success: #00d084;
+            --color-warning: #ffa500;
+            --color-danger: #ff1744;
+            --color-text: #e0e0e0;
+            --color-text-muted: #999;
+            --color-border: #4a3570;
+            --color-bg: #0f0818;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f0818 0%, #1a0f2e 100%);
+            color: var(--color-text);
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            min-height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(90deg, #1a0f2e 0%, #2d1b4e 100%);
+            border: 2px solid var(--color-accent);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(199, 21, 122, 0.3);
+        }
+
+        .header h1 {
+            color: var(--color-accent-light);
+            font-size: 28px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px rgba(233, 30, 140, 0.5);
+        }
+
+        .header p {
+            color: var(--color-text-muted);
+            font-size: 12px;
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+        }
+
+        /* Connectors Panel */
+        .panel {
+            background: linear-gradient(135deg, #2d1b4e 0%, #3d2463 100%);
+            border: 2px solid var(--color-accent);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(199, 21, 122, 0.2);
+        }
+
+        .panel-title {
+            color: var(--color-accent-light);
+            font-size: 14px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: 10px;
+        }
+
+        /* Connector Toggles */
+        .connector-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .connector-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .connector-item:hover {
+            background: rgba(199, 21, 122, 0.1);
+            border-color: var(--color-accent);
+        }
+
+        .toggle-switch {
+            width: 40px;
+            height: 24px;
+            background: #555;
+            border-radius: 12px;
+            position: relative;
+            margin-right: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--color-success);
+        }
+
+        .toggle-knob {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-knob {
+            left: 18px;
+        }
+
+        .connector-label {
+            font-size: 12px;
+            color: var(--color-text);
+            flex: 1;
+        }
+
+        .connector-status {
+            font-size: 10px;
+            color: var(--color-text-muted);
+            padding: 2px 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        /* Rating Scale Panel */
+        .rating-scale {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .rating-band {
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .rating-band.band-5 {
+            border-left-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .rating-band.band-4 {
+            border-left-color: var(--color-success);
+            background: rgba(0, 208, 132, 0.1);
+        }
+
+        .rating-band.band-3 {
+            border-left-color: var(--color-warning);
+            background: rgba(255, 165, 0, 0.1);
+        }
+
+        .rating-band.band-2 {
+            border-left-color: #ff6b35;
+            background: rgba(255, 107, 53, 0.1);
+        }
+
+        .rating-band.band-1 {
+            border-left-color: var(--color-danger);
+            background: rgba(255, 23, 68, 0.1);
+        }
+
+        .rating-band.active {
+            transform: translateX(10px);
+            border-left-width: 6px;
+        }
+
+        /* Central Dashboard */
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .evidence-section {
+            background: linear-gradient(135deg, #2d1b4e 0%, #3d2463 100%);
+            border: 2px solid var(--color-accent);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(199, 21, 122, 0.2);
+        }
+
+        .section-title {
+            color: var(--color-accent-light);
+            font-size: 13px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--color-border);
+            padding-bottom: 10px;
+        }
+
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .evidence-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .evidence-item:hover {
+            background: rgba(199, 21, 122, 0.1);
+            border-color: var(--color-accent);
+            transform: translateY(-2px);
+        }
+
+        .evidence-source {
+            color: var(--color-text-muted);
+            font-size: 10px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .evidence-text {
+            color: var(--color-text);
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .evidence-match {
+            font-size: 9px;
+            color: var(--color-success);
+            background: rgba(0, 208, 132, 0.2);
+            padding: 2px 4px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        /* Scoring Metrics */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .metric {
+            background: rgba(199, 21, 122, 0.15);
+            border: 1px solid var(--color-accent);
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 10px;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--color-accent-light);
+        }
+
+        /* Compliance Table */
+        .compliance-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-top: 15px;
+        }
+
+        .compliance-table thead {
+            background: rgba(199, 21, 122, 0.2);
+        }
+
+        .compliance-table th {
+            color: var(--color-accent-light);
+            padding: 10px;
+            text-align: left;
+            border-bottom: 2px solid var(--color-accent);
+            font-weight: bold;
+        }
+
+        .compliance-table td {
+            padding: 10px;
+            border-bottom: 1px solid var(--color-border);
+            color: var(--color-text);
+        }
+
+        .compliance-table tbody tr:hover {
+            background: rgba(199, 21, 122, 0.1);
+        }
+
+        .compliance-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .status-pass {
+            background: rgba(0, 208, 132, 0.2);
+            color: var(--color-success);
+        }
+
+        .status-fail {
+            background: rgba(255, 23, 68, 0.2);
+            color: var(--color-danger);
+        }
+
+        .status-warn {
+            background: rgba(255, 165, 0, 0.2);
+            color: var(--color-warning);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.pass {
+            background: var(--color-success);
+        }
+
+        .status-dot.fail {
+            background: var(--color-danger);
+        }
+
+        .status-dot.warn {
+            background: var(--color-warning);
+        }
+
+        /* Right Panel - Tier Keywords */
+        .keywords-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .tier-box {
+            background: linear-gradient(135deg, #2d1b4e 0%, #3d2463 100%);
+            border: 2px solid;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(199, 21, 122, 0.2);
+        }
+
+        .tier-box.transformational {
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+
+        .tier-box.developmental {
+            border-color: var(--color-warning);
+            box-shadow: 0 0 15px rgba(255, 165, 0, 0.2);
+        }
+
+        .tier-box.compliance {
+            border-color: var(--color-danger);
+            box-shadow: 0 0 15px rgba(255, 23, 68, 0.2);
+        }
+
+        .tier-label {
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .tier-box.transformational .tier-label {
+            color: #00ff00;
+        }
+
+        .tier-box.developmental .tier-label {
+            color: var(--color-warning);
+        }
+
+        .tier-box.compliance .tier-label {
+            color: var(--color-danger);
+        }
+
+        .keyword-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .keyword {
+            background: rgba(199, 21, 122, 0.2);
+            border: 1px solid var(--color-accent);
+            border-radius: 3px;
+            padding: 4px 8px;
+            font-size: 9px;
+            color: var(--color-text);
+            word-break: break-word;
+        }
+
+        /* Scan Button */
+        .scan-section {
+            margin-top: 20px;
+        }
+
+        .scan-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
+            border: 2px solid var(--color-accent-light);
+            border-radius: 6px;
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(233, 30, 140, 0.4);
+        }
+
+        .scan-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(233, 30, 140, 0.6);
+        }
+
+        .scan-button:active {
+            transform: translateY(0);
+        }
+
+        .scan-button.scanning {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(233, 30, 140, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(233, 30, 140, 0.8); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .main-grid {
+                grid-template-columns: 1fr 1.5fr;
+            }
+            .keywords-section {
+                grid-column: 1 / -1;
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 1000px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            .evidence-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .metrics-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                gap: 15px;
+            }
+            .evidence-grid {
+                grid-template-columns: 1fr;
+            }
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧛‍♂️ VAMP Agent v3.0</h1>
+            <p>NWU Policy Compliance Scorer | Pure Logic-Gate Scoring | No AI APIs</p>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Left Panel: Connectors & Rating -->
+            <div>
+                <!-- Connectors -->
+                <div class="panel">
+                    <div class="panel-title">📡 Data Connectors</div>
+                    <div class="connector-list" id="connectorList"></div>
+                </div>
+
+                <!-- Rating Scale -->
+                <div class="panel" style="margin-top: 20px;">
+                    <div class="panel-title">⭐ NWU Rating Scale</div>
+                    <div class="rating-scale" id="ratingScale"></div>
+                </div>
+
+                <!-- Scan Button -->
+                <div class="scan-section">
+                    <button class="scan-button" id="scanButton">▶ Run Compliance Scan</button>
+                </div>
+            </div>
+
+            <!-- Central: Evidence & Compliance -->
+            <div class="dashboard">
+                <!-- Evidence Items -->
+                <div class="evidence-section">
+                    <div class="section-title">🔍 Scanned Evidence (12 Mock Items)</div>
+                    <div class="evidence-grid" id="evidenceGrid"></div>
+                    <div class="metrics-grid" id="metricsGrid"></div>
+                </div>
+
+                <!-- Compliance Table -->
+                <div class="evidence-section">
+                    <div class="section-title">📋 Policy Compliance Matrix</div>
+                    <table class="compliance-table" id="complianceTable">
+                        <thead>
+                            <tr>
+                                <th>Policy ID</th>
+                                <th>Policy Name</th>
+                                <th>Clauses Matched</th>
+                                <th>Mandatory Status</th>
+                                <th>Overall Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="complianceTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Panel: Tier Keywords -->
+            <div class="keywords-section" id="keywordsSectionContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // VAMP v3.0 - Complete Policy Database & Engines
+        // ============================================
+
+        // 1. Brain Manifest
+        const brainManifest = {
+            version: "3.0",
+            name: "VAMP Agent v3.0",
+            description: "NWU Policy Compliance Scorer",
+            engines: ["KPARouter", "PolicyMatcher", "ValuesScorer", "TierAssigner", "ClauseScorer"],
+            connectors: ["Outlook", "OneDrive/SharePoint", "Google Drive", "NWU Nextcloud", "eFundi"]
+        };
+
+        // 2. Clause Packs - 80+ Policy Clause Patterns
+        const clausePacks = {
+            "POL-ETH-1": {
+                name: "Ethics & Integrity",
+                mandatory: 1,
+                clauses: [
+                    { pattern: /integrity|honest|authentic|transparent/i, weight: 3, type: "mandatory" },
+                    { pattern: /ethical|moral|principle|conduct/i, weight: 3, type: "mandatory" },
+                    { pattern: /conflict.of.interest|disclosure|impartiality/i, weight: 3, type: "mandatory" },
+                    { pattern: /accountability|responsible|liable|duty/i, weight: 2, type: "recommended" },
+                    { pattern: /stakeholder|trust|reputation|standing/i, weight: 2, type: "recommended" }
+                ]
+            },
+            "POL-OHS-1": {
+                name: "Occupational Health & Safety",
+                mandatory: 1,
+                clauses: [
+                    { pattern: /safety|hazard|risk.assessment|incident/i, weight: 3, type: "mandatory" },
+                    { pattern: /health|wellness|wellbeing|medical/i, weight: 3, type: "mandatory" },
+                    { pattern: /emergency|evacuation|protocol|procedure/i, weight: 3, type: "mandatory" },
+                    { pattern: /training|awareness|competency|qualification/i, weight: 2, type: "recommended" },
+                    { pattern: /incident.report|investigation|corrective/i, weight: 2, type: "recommended" }
+                ]
+            },
+            "POL-GOV-1": {
+                name: "Governance & Compliance",
+                mandatory: 0,
+                clauses: [
+                    { pattern: /governance|board|executive|committee/i, weight: 3, type: "mandatory" },
+                    { pattern: /policy|procedure|guideline|standard/i, weight: 3, type: "mandatory" },
+                    { pattern: /audit|compliance|monitor|review/i, weight: 2, type: "recommended" },
+                    { pattern: /transparency|disclosure|reporting|accountability/i, weight: 2, type: "recommended" },
+                    { pattern: /stakeholder|engagement|consultation|feedback/i, weight: 1, type: "recommended" }
+                ]
+            },
+            "POL-DIV-1": {
+                name: "Diversity & Inclusion",
+                mandatory: 0,
+                clauses: [
+                    { pattern: /diversity|inclusion|equity|representation/i, weight: 3, type: "mandatory" },
+                    { pattern: /discrimination|bias|prejudice|stereotype/i, weight: 3, type: "mandatory" },
+                    { pattern: /access|accommodation|reasonable|adjustment/i, weight: 2, type: "recommended" },
+                    { pattern: /training|awareness|education|culture/i, weight: 2, type: "recommended" },
+                    { pattern: /data|metric|monitoring|tracking/i, weight: 1, type: "recommended" }
+                ]
+            },
+            "POL-FIN-1": {
+                name: "Financial Management",
+                mandatory: 0,
+                clauses: [
+                    { pattern: /budget|expenditure|cost|resource/i, weight: 3, type: "mandatory" },
+                    { pattern: /audit|control|segregation|duty/i, weight: 3, type: "mandatory" },
+                    { pattern: /fraud|theft|misappropriation|irregularity/i, weight: 2, type: "recommended" },
+                    { pattern: /report|reconciliation|reconcile|statement/i, weight: 2, type: "recommended" },
+                    { pattern: /approval|authorization|delegation|limit/i, weight: 1, type: "recommended" }
+                ]
+            },
+            "POL-HR-1": {
+                name: "Human Resources",
+                mandatory: 0,
+                clauses: [
+                    { pattern: /employee|staff|personnel|human.resource/i, weight: 3, type: "mandatory" },
+                    { pattern: /recruitment|selection|appointment|contract/i, weight: 3, type: "mandatory" },
+                    { pattern: /performance|appraisal|development|training/i, weight: 2, type: "recommended" },
+                    { pattern: /disciplinary|grievance|dispute|resolution/i, weight: 2, type: "recommended" },
+                    { pattern: /compensation|benefit|leave|remuneration/i, weight: 1, type: "recommended" }
+                ]
+            },
+            "POL-IT-1": {
+                name: "Information Technology",
+                mandatory: 0,
+                clauses: [
+                    { pattern: /cybersecurity|security|threat|vulnerability/i, weight: 3, type: "mandatory" },
+                    { pattern: /data|privacy|confidential|classified/i, weight: 3, type: "mandatory" },
+                    { pattern: /backup|disaster.recovery|continuity|availability/i, weight: 2, type: "recommended" },
+                    { pattern: /access.control|authentication|authorization|permission/i, weight: 2, type: "recommended" },
+                    { pattern: /incident|breach|report|notification/i, weight: 1, type: "recommended" }
+                ]
+            },
+            "POL-ENV-1": {
+                name: "Environmental Sustainability",
+                mandatory: 0,
+                clauses: [
+                    { pattern: /environment|sustainability|green|eco/i, weight: 3, type: "mandatory" },
+                    { pattern: /carbon|emission|footprint|climate/i, weight: 3, type: "mandatory" },
+                    { pattern: /waste|recycling|conservation|resource/i, weight: 2, type: "recommended" },
+                    { pattern: /renewable|energy|efficiency|consumption/i, weight: 2, type: "recommended" },
+                    { pattern: /monitoring|target|goal|reduction/i, weight: 1, type: "recommended" }
+                ]
+            },
+            "POL-QA-1": {
+                name: "Quality Assurance",
+                mandatory: 0,
+                clauses: [
+                    { pattern: /quality|standard|excellence|best.practice/i, weight: 3, type: "mandatory" },
+                    { pattern: /process|procedure|documentation|record/i, weight: 3, type: "mandatory" },
+                    { pattern: /audit|inspection|verification|validation/i, weight: 2, type: "recommended" },
+                    { pattern: /improvement|continuous|feedback|lesson/i, weight: 2, type: "recommended" },
+                    { pattern: /metric|indicator|kpi|performance/i, weight: 1, type: "recommended" }
+                ]
+            },
+            "POL-RES-1": {
+                name: "Research & Innovation",
+                mandatory: 0,
+                clauses: [
+                    { pattern: /research|study|investigation|inquiry/i, weight: 3, type: "mandatory" },
+                    { pattern: /innovation|development|creation|discovery/i, weight: 3, type: "mandatory" },
+                    { pattern: /ethics|integrity|plagiarism|attribution/i, weight: 2, type: "recommended" },
+                    { pattern: /intellectual.property|patent|publication|peer.review/i, weight: 2, type: "recommended" },
+                    { pattern: /funding|grant|collaboration|partnership/i, weight: 1, type: "recommended" }
+                ]
+            }
+        };
+
+        // 3. Institution Profile - NWU Rating Scale & Weights
+        const institutionProfile = {
+            name: "Northwest University",
+            ratingScale: {
+                5: { name: "Excellence", description: "Exceptional compliance, transformational impact", range: "90-100%" },
+                4: { name: "Good", description: "Strong compliance, developmental progress", range: "75-89%" },
+                3: { name: "Acceptable", description: "Adequate compliance, meets standards", range: "60-74%" },
+                2: { name: "Below Standard", description: "Partial compliance, improvement needed", range: "40-59%" },
+                1: { name: "Non-Compliant", description: "Minimal/no compliance, urgent action required", range: "0-39%" }
+            },
+            kpaDefinitions: {
+                "KPA-Teaching": "Teaching & Learning",
+                "KPA-Research": "Research & Innovation",
+                "KPA-Engagement": "Community Engagement",
+                "KPA-Management": "Institutional Management",
+                "KPA-Governance": "Governance & Leadership"
+            },
+            mustPassPolicies: ["POL-ETH-1", "POL-OHS-1"],
+            compositeWeights: {
+                tier: 0.4,
+                policy: 0.3,
+                values: 0.2,
+                kpaCoverage: 0.1
+            }
+        };
+
+        // 4. Tier Keywords
+        const tierKeywords = {
+            transformational: [
+                "innovation", "excellence", "transformative", "strategic", "visionary",
+                "sustainable", "collaborative", "integrated", "systemic", "breakthrough"
+            ],
+            developmental: [
+                "improving", "growing", "emerging", "evolving", "advancing",
+                "building", "strengthening", "developing", "maturing", "progressing"
+            ],
+            compliance: [
+                "mandatory", "required", "regulated", "statutory", "compliance",
+                "control", "governance", "audit", "standard", "procedural"
+            ]
+        };
+
+        // 5. Policy ID Map
+        const policyIdMap = {
+            "ETH": "POL-ETH-1",
+            "OHS": "POL-OHS-1",
+            "GOV": "POL-GOV-1",
+            "DIV": "POL-DIV-1",
+            "FIN": "POL-FIN-1",
+            "HR": "POL-HR-1",
+            "IT": "POL-IT-1",
+            "ENV": "POL-ENV-1",
+            "QA": "POL-QA-1",
+            "RES": "POL-RES-1"
+        };
+
+        // 6. KPA Router - Maps policies to KPAs
+        const kpaRouter = {
+            "POL-ETH-1": ["KPA-Governance", "KPA-Management"],
+            "POL-OHS-1": ["KPA-Management"],
+            "POL-GOV-1": ["KPA-Governance"],
+            "POL-DIV-1": ["KPA-Engagement", "KPA-Management"],
+            "POL-FIN-1": ["KPA-Management"],
+            "POL-HR-1": ["KPA-Management"],
+            "POL-IT-1": ["KPA-Management"],
+            "POL-ENV-1": ["KPA-Engagement"],
+            "POL-QA-1": ["KPA-Teaching", "KPA-Research"],
+            "POL-RES-1": ["KPA-Research"]
+        };
+
+        // 7. Values Index
+        const valuesIndex = {
+            "integrity": { weight: 1.0, tier: "transformational" },
+            "accountability": { weight: 0.9, tier: "transformational" },
+            "excellence": { weight: 0.9, tier: "transformational" },
+            "transparency": { weight: 0.8, tier: "developmental" },
+            "collaboration": { weight: 0.8, tier: "developmental" },
+            "innovation": { weight: 0.7, tier: "transformational" },
+            "sustainability": { weight: 0.7, tier: "developmental" },
+            "inclusivity": { weight: 0.8, tier: "developmental" },
+            "compliance": { weight: 0.6, tier: "compliance" },
+            "efficiency": { weight: 0.5, tier: "compliance" }
+        };
+
+        // 8. Mock Evidence Data - 12 items from 5 platforms
+        const mockEvidencePool = [
+            {
+                source: "Outlook",
+                text: "Q3 ethics training completed with integrity and transparency focus",
+                platform: "Outlook"
+            },
+            {
+                source: "OneDrive",
+                text: "Health and safety incident report with emergency procedures documented",
+                platform: "OneDrive/SharePoint"
+            },
+            {
+                source: "Google Drive",
+                text: "Diversity and inclusion policy implementation with equity metrics",
+                platform: "Google Drive"
+            },
+            {
+                source: "Nextcloud",
+                text: "Annual governance audit report showing strong compliance controls",
+                platform: "NWU Nextcloud"
+            },
+            {
+                source: "eFundi",
+                text: "Research ethics approval with integrity and plagiarism prevention measures",
+                platform: "eFundi (LMS)"
+            },
+            {
+                source: "Outlook",
+                text: "Financial management quarterly reconciliation with audit control procedures",
+                platform: "Outlook"
+            },
+            {
+                source: "Google Drive",
+                text: "Employee performance appraisal system with development training records",
+                platform: "Google Drive"
+            },
+            {
+                source: "Nextcloud",
+                text: "Cybersecurity policy update with data privacy and authentication controls",
+                platform: "NWU Nextcloud"
+            },
+            {
+                source: "OneDrive",
+                text: "Environmental sustainability initiative documenting carbon reduction targets",
+                platform: "OneDrive/SharePoint"
+            },
+            {
+                source: "eFundi",
+                text: "Quality assurance framework with continuous improvement procedures",
+                platform: "eFundi (LMS)"
+            },
+            {
+                source: "Outlook",
+                text: "Risk management assessment identifying hazards and mitigation strategies",
+                platform: "Outlook"
+            },
+            {
+                source: "Google Drive",
+                text: "Knowledge management system with collaborative documentation standards",
+                platform: "Google Drive"
+            }
+        ];
+
+        // ============================================
+        // SCORING ENGINES
+        // ============================================
+
+        // Engine 1: KPA Router
+        const KPARouter = {
+            score: function(policyId, matchedClauses) {
+                const kpas = kpaRouter[policyId] || [];
+                return {
+                    kpas,
+                    coverage: kpas.length > 0 ? (matchedClauses.length / 5) * 100 : 0
+                };
+            }
+        };
+
+        // Engine 2: Policy Matcher - Scans for mandatory clauses
+        const PolicyMatcher = {
+            score: function(evidence, policyId) {
+                const policy = clausePacks[policyId];
+                if (!policy) return { matched: 0, mandatory: 0, weight: 0 };
+
+                let matchedClauses = [];
+                let mandatoryMatches = 0;
+                let totalWeight = 0;
+
+                policy.clauses.forEach(clause => {
+                    if (clause.pattern.test(evidence)) {
+                        matchedClauses.push(clause);
+                        totalWeight += clause.weight;
+                        if (clause.type === "mandatory") mandatoryMatches++;
+                    }
+                });
+
+                return {
+                    matched: matchedClauses.length,
+                    mandatory: mandatoryMatches,
+                    weight: totalWeight,
+                    clauses: matchedClauses
+                };
+            }
+        };
+
+        // Engine 3: Values Scorer - Maps to tier classification
+        const ValuesScorer = {
+            score: function(evidence) {
+                let tierScores = { transformational: 0, developmental: 0, compliance: 0 };
+                let foundValues = [];
+
+                Object.entries(valuesIndex).forEach(([value, info]) => {
+                    const pattern = new RegExp(value, 'i');
+                    if (pattern.test(evidence)) {
+                        tierScores[info.tier] += info.weight;
+                        foundValues.push(value);
+                    }
+                });
+
+                // Also check tier keywords
+                tierKeywords.transformational.forEach(kw => {
+                    if (new RegExp(kw, 'i').test(evidence)) tierScores.transformational += 0.3;
+                });
+                tierKeywords.developmental.forEach(kw => {
+                    if (new RegExp(kw, 'i').test(evidence)) tierScores.developmental += 0.2;
+                });
+                tierKeywords.compliance.forEach(kw => {
+                    if (new RegExp(kw, 'i').test(evidence)) tierScores.compliance += 0.2;
+                });
+
+                return { tierScores, foundValues };
+            }
+        };
+
+        // Engine 4: Tier Assigner - Final rating assignment
+        const TierAssigner = {
+            score: function(compositeScore) {
+                if (compositeScore >= 90) return 5;
+                if (compositeScore >= 75) return 4;
+                if (compositeScore >= 60) return 3;
+                if (compositeScore >= 40) return 2;
+                return 1;
+            }
+        };
+
+        // Engine 5: Clause Scorer - NEW - Scans all 80+ clauses
+        const ClauseScorer = {
+            scorePolicy: function(evidence, policyId) {
+                const policy = clausePacks[policyId];
+                if (!policy) return { total: 0, mandatory: 0, recommended: 0, percentage: 0 };
+
+                let mandatoryCount = 0;
+                let recommendedCount = 0;
+
+                policy.clauses.forEach(clause => {
+                    if (clause.pattern.test(evidence)) {
+                        if (clause.type === "mandatory") mandatoryCount++;
+                        else recommendedCount++;
+                    }
+                });
+
+                const total = mandatoryCount + recommendedCount;
+                const percentage = Math.round((total / policy.clauses.length) * 100);
+
+                return {
+                    total,
+                    mandatory: mandatoryCount,
+                    recommended: recommendedCount,
+                    percentage
+                };
+            }
+        };
+
+        // ============================================
+        // MAIN SCANNING LOGIC
+        // ============================================
+
+        class VAMPScanner {
+            constructor() {
+                this.activeConnectors = new Set();
+                this.scanResults = {};
+                this.currentRating = 3;
+            }
+
+            toggleConnector(name) {
+                if (this.activeConnectors.has(name)) {
+                    this.activeConnectors.delete(name);
+                } else {
+                    this.activeConnectors.add(name);
+                }
+            }
+
+            runComplianceScan() {
+                this.scanResults = {};
+
+                Object.keys(clausePacks).forEach(policyId => {
+                    const policy = clausePacks[policyId];
+                    let policyScore = 0;
+                    let totalEvidence = 0;
+                    let mandatoryPassed = 0;
+
+                    mockEvidencePool.forEach(evidence => {
+                        const policyMatch = PolicyMatcher.score(evidence.text, policyId);
+                        const valuesMatch = ValuesScorer.score(evidence.text);
+                        const clauseMatch = ClauseScorer.scorePolicy(evidence.text, policyId);
+
+                        if (policyMatch.matched > 0) {
+                            totalEvidence++;
+                            policyScore += policyMatch.weight * 10;
+
+                            if (policyMatch.mandatory > 0) {
+                                mandatoryPassed++;
+                            }
+                        }
+                    });
+
+                    // Calculate composite score using institution weights
+                    const weights = institutionProfile.compositeWeights;
+                    let compositeScore = 0;
+
+                    if (totalEvidence > 0) {
+                        const policyScore_norm = Math.min(100, (policyScore / (totalEvidence * 30)) * 100);
+                        const tierScore = mandatoryPassed > 0 ? 80 : 40;
+                        const valuesScore = 70;
+
+                        compositeScore = (
+                            tierScore * weights.tier +
+                            policyScore_norm * weights.policy +
+                            valuesScore * weights.values +
+                            (totalEvidence / 12) * 100 * weights.kpaCoverage
+                        );
+                    }
+
+                    this.scanResults[policyId] = {
+                        policy: policy.name,
+                        evidenceCount: totalEvidence,
+                        mandatoryPassed: mandatoryPassed,
+                        isMandatory: policy.mandatory === 1,
+                        compositeScore: Math.round(compositeScore),
+                        clauseMatch: ClauseScorer.scorePolicy(
+                            mockEvidencePool.map(e => e.text).join(" "),
+                            policyId
+                        )
+                    };
+                });
+
+                return this.scanResults;
+            }
+
+            getCompositeRating() {
+                const results = Object.values(this.scanResults);
+                if (results.length === 0) return 3;
+
+                const avgScore = results.reduce((acc, r) => acc + r.compositeScore, 0) / results.length;
+                return TierAssigner.score(avgScore);
+            }
+        }
+
+        // ============================================
+        // UI RENDERING
+        // ============================================
+
+        const scanner = new VAMPScanner();
+
+        // Initialize connectors
+        function initializeConnectors() {
+            const connectors = [
+                { name: "Outlook", icon: "📧" },
+                { name: "OneDrive/SharePoint", icon: "☁️" },
+                { name: "Google Drive", icon: "📁" },
+                { name: "NWU Nextcloud", icon: "🔒" },
+                { name: "eFundi", icon: "📚" }
+            ];
+
+            const listHTML = connectors.map(conn => `
+                <div class="connector-item" onclick="toggleConnector('${conn.name}', this)">
+                    <div class="toggle-switch">
+                        <div class="toggle-knob"></div>
+                    </div>
+                    <span class="connector-label">${conn.icon} ${conn.name}</span>
+                    <span class="connector-status">offline</span>
+                </div>
+            `).join('');
+
+            document.getElementById('connectorList').innerHTML = listHTML;
+        }
+
+        function toggleConnector(name, element) {
+            scanner.toggleConnector(name);
+            const toggle = element.querySelector('.toggle-switch');
+            const status = element.querySelector('.connector-status');
+
+            toggle.classList.toggle('active');
+            status.textContent = toggle.classList.contains('active') ? 'online' : 'offline';
+        }
+
+        // Initialize rating scale
+        function initializeRatingScale() {
+            const scales = [
+                { band: 5, label: "Excellence", color: "band-5" },
+                { band: 4, label: "Good", color: "band-4" },
+                { band: 3, label: "Acceptable", color: "band-3" },
+                { band: 2, label: "Below Standard", color: "band-2" },
+                { band: 1, label: "Non-Compliant", color: "band-1" }
+            ];
+
+            const scaleHTML = scales.map(scale => `
+                <div class="rating-band ${scale.color}">
+                    <strong>Band ${scale.band}:</strong> ${scale.label}
+                </div>
+            `).join('');
+
+            document.getElementById('ratingScale').innerHTML = scaleHTML;
+        }
+
+        // Render evidence items
+        function renderEvidence() {
+            const selected = mockEvidencePool.slice(0, 12);
+            const gridHTML = selected.map((evidence, idx) => {
+                const policyMatch = Object.keys(clausePacks).find(policyId => {
+                    const policy = clausePacks[policyId];
+                    return policy.clauses.some(c => c.pattern.test(evidence.text));
+                });
+
+                return `
+                    <div class="evidence-item">
+                        <div class="evidence-source">${evidence.source}</div>
+                        <div class="evidence-text">${evidence.text.substring(0, 60)}...</div>
+                        ${policyMatch ? `<span class="evidence-match">${policyMatch}</span>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('evidenceGrid').innerHTML = gridHTML;
+        }
+
+        // Render metrics
+        function renderMetrics() {
+            const results = scanner.scanResults;
+            const metrics = [
+                { label: "Policies Analyzed", value: Object.keys(results).length },
+                { label: "Evidence Scanned", value: mockEvidencePool.length },
+                { label: "Avg Compliance", value: Math.round(Object.values(results).reduce((a, r) => a + r.compositeScore, 0) / Object.keys(results).length) + "%" },
+                { label: "Must-Pass Status", value: results["POL-ETH-1"]?.mandatoryPassed > 0 ? "✓ PASS" : "✗ FAIL" },
+                { label: "Current Rating", value: scanner.getCompositeRating() + "/5" }
+            ];
+
+            const metricsHTML = metrics.map(m => `
+                <div class="metric">
+                    <div class="metric-label">${m.label}</div>
+                    <div class="metric-value">${m.value}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('metricsGrid').innerHTML = metricsHTML;
+        }
+
+        // Render compliance table
+        function renderComplianceTable() {
+            const results = scanner.scanResults;
+            const rowsHTML = Object.entries(results).map(([policyId, result]) => {
+                const isMustPass = institutionProfile.mustPassPolicies.includes(policyId);
+                const status = isMustPass ? 
+                    (result.mandatoryPassed > 0 ? 'pass' : 'fail') : 
+                    (result.compositeScore >= 60 ? 'pass' : 'warn');
+
+                const statusText = isMustPass ?
+                    (result.mandatoryPassed > 0 ? 'MUST-PASS ✓' : 'MUST-PASS ✗') :
+                    (result.compositeScore >= 60 ? 'COMPLIANT' : 'REVIEW');
+
+                return `
+                    <tr>
+                        <td>${policyId}</td>
+                        <td>${result.policy}</td>
+                        <td>${result.clauseMatch.total}/${result.clauseMatch.mandatory + result.clauseMatch.recommended}</td>
+                        <td>
+                            <span class="compliance-status status-${status}">
+                                <span class="status-dot ${status}"></span>${statusText}
+                            </span>
+                        </td>
+                        <td><strong>${result.compositeScore}%</strong></td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('complianceTableBody').innerHTML = rowsHTML;
+        }
+
+        // Render tier keywords
+        function renderTierKeywords() {
+            const tiers = [
+                { class: 'transformational', label: '⭐ TRANSFORMATIONAL', keywords: tierKeywords.transformational },
+                { class: 'developmental', label: '📈 DEVELOPMENTAL', keywords: tierKeywords.developmental },
+                { class: 'compliance', label: '✓ COMPLIANCE', keywords: tierKeywords.compliance }
+            ];
+
+            const containerHTML = tiers.map(tier => `
+                <div class="tier-box ${tier.class}">
+                    <div class="tier-label">${tier.label}</div>
+                    <div class="keyword-list">
+                        ${tier.keywords.slice(0, 4).map(kw => `<span class="keyword">${kw}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('keywordsSectionContainer').innerHTML = containerHTML;
+        }
+
+        // Scan button handler
+        document.getElementById('scanButton').addEventListener('click', function() {
+            this.classList.add('scanning');
+            setTimeout(() => {
+                scanner.runComplianceScan();
+                renderMetrics();
+                renderComplianceTable();
+                this.classList.remove('scanning');
+            }, 800);
+        });
+
+        // Initialize on load
+        window.addEventListener('load', function() {
+            initializeConnectors();
+            initializeRatingScale();
+            renderEvidence();
+            renderTierKeywords();
+            scanner.runComplianceScan();
+            renderMetrics();
+            renderComplianceTable();
+        });
+    </script>
+</body>
+</html>
